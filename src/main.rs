@@ -19,7 +19,7 @@ mod html;
 mod wifi;
 use html::{index, IndexProps};
 use http::Uri;
-use url::{form_urlencoded, Url};
+use url::form_urlencoded;
 use wifi::init_wifi;
 
 fn main() {

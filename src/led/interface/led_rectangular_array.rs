@@ -1,8 +1,8 @@
 use super::{LedArray, Pixel};
 
 pub struct LedRectangularArray {
-    width: usize,
-    height: usize,
+    pub width: usize,
+    pub height: usize,
     pixels: Vec<Vec<Pixel>>,
 }
 

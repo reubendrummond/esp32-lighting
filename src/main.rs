@@ -1,6 +1,5 @@
 use core::panic;
 use std::{
-    borrow::BorrowMut,
     sync::{Arc, Mutex},
     thread::sleep,
     time::Duration,
@@ -21,11 +20,11 @@ use esp_idf_svc::{
 use esp32_lighting::wifi::init_wifi;
 use esp32_lighting::{
     html::{index, IndexProps},
-    led::interface::{self, LedArray, LedDisplayWrite, Pixel},
+    led::interface::{self, LedDisplayWrite, Pixel},
 };
 
 use http::Uri;
-use rgb::{RGB, RGB8, RGBA8};
+use rgb::RGB8;
 use url::form_urlencoded;
 use ws2812_esp32_rmt_driver::{driver::color::LedPixelColorGrb24, LedPixelEsp32Rmt};
 

@@ -1,4 +1,5 @@
 use crate::led::pixel::Pixel;
+use either::Either::{Left, Right};
 
 use super::LedArray;
 
@@ -13,8 +14,7 @@ pub struct LedRectangularArray {
 
 impl LedRectangularArray {
     pub fn new(width: usize, height: usize) -> Self {
-        let pixels = vec![vec![Pixel::new(5, 10, 20); width]; height];
-        // let pixels = vec![vec![Pixel::default(); width]; height];
+        let pixels = vec![vec![Pixel::default(); width]; height];
 
         LedRectangularArray {
             width,
@@ -30,8 +30,12 @@ impl LedRectangularArray {
 
 impl LedArray for LedRectangularArray {
     fn ordered_iter(&self) -> impl Iterator<Item = &Pixel> {
-        // let d = self.width * self.height;
-        // TODO: make ordered from top left to bottom right
-        self.pixels.iter().flat_map(|row| row.iter())
+        self.pixels.iter().rev().enumerate().flat_map(|(i, row)| {
+            if i % 2 == 0 {
+                Left(row.iter())
+            } else {
+                Right(row.iter().rev())
+            }
+        })
     }
 }

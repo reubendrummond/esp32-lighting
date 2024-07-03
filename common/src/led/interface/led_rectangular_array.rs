@@ -2,6 +2,8 @@ use crate::led::pixel::Pixel;
 
 use super::LedArray;
 
+#[cfg(test)]
+mod tests;
 
 pub struct LedRectangularArray {
     pub width: usize,

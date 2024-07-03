@@ -42,6 +42,7 @@ url = "2.5.0"
 http = "1.1.0"
 ws2812-esp32-rmt-driver = { version = "0.8.0", features = ["smart-leds-trait"] }
 smart-leds-trait = "0.3.0"
+rgb = "0.8.37"
 
 [build-dependencies]
 dotenv-build = "0.1.1"

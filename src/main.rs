@@ -1,4 +1,6 @@
+use core::panic;
 use std::{
+    borrow::BorrowMut,
     sync::{Arc, Mutex},
     thread::sleep,
     time::Duration,
@@ -16,65 +18,18 @@ use esp_idf_svc::{
     timer::EspTaskTimerService,
 };
 
-use esp32_lighting::html::{index, IndexProps};
-// use esp32_lighting::led;
 use esp32_lighting::wifi::init_wifi;
+use esp32_lighting::{
+    html::{index, IndexProps},
+    led::interface::{self, LedArray, LedDisplayWrite, Pixel},
+};
 
 use http::Uri;
+use rgb::{RGB, RGB8, RGBA8};
 use url::form_urlencoded;
+use ws2812_esp32_rmt_driver::{driver::color::LedPixelColorGrb24, LedPixelEsp32Rmt};
 
-use smart_leds_trait::{SmartLedsWrite, White};
-use ws2812_esp32_rmt_driver::driver::color::LedPixelColorGrb24;
-use ws2812_esp32_rmt_driver::{LedPixelEsp32Rmt, RGB8};
-
-#[derive(Clone)]
-struct RGBA {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
-}
-
-const NUM_BRIGHTNESS_LEVELS: usize = 6;
-const MAPPING: [u8; NUM_BRIGHTNESS_LEVELS] = [0, 6, 30, 100, 254, 255];
-
-fn map_to_brightness(c: u8, a: u8) -> u8 {
-    let index = if a as usize >= NUM_BRIGHTNESS_LEVELS {
-        NUM_BRIGHTNESS_LEVELS - 1
-    } else {
-        a as usize
-    };
-
-    (c as u16 * MAPPING[index] as u16 / 255) as u8
-}
-
-impl From<(u8, u8, u8, u8)> for RGBA {
-    fn from((r, g, b, a): (u8, u8, u8, u8)) -> Self {
-        RGBA { r, g, b, a }
-    }
-}
-impl From<(u8, u8, u8)> for RGBA {
-    fn from((r, g, b): (u8, u8, u8)) -> Self {
-        RGBA {
-            r,
-            g,
-            b,
-            a: std::u8::MAX,
-        }
-    }
-}
-
-impl From<RGBA> for RGB8 {
-    fn from(rgba: RGBA) -> Self {
-        let r = map_to_brightness(rgba.r, rgba.a);
-        let g = map_to_brightness(rgba.g, rgba.a);
-        let b = map_to_brightness(rgba.b, rgba.a);
-        RGB8 { r, g, b }
-    }
-}
-
-// fn main() -> ! {
-fn main() {
+fn main() -> ! {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
     esp_idf_svc::sys::link_patches();
@@ -95,8 +50,7 @@ fn main() {
     ) {
         Ok(wifi) => wifi,
         Err(e) => {
-            log::error!("Failed to initialize wifi: {:?}", e);
-            return;
+            panic!("Failed to initialize wifi: {:?}", e)
         }
     };
 
@@ -150,49 +104,69 @@ fn main() {
 
     let led_pin = peripherals.pins.gpio26;
     let channel = peripherals.rmt.channel0;
-    let mut ws2812 = LedPixelEsp32Rmt::<RGB8, LedPixelColorGrb24>::new(channel, led_pin).unwrap();
-    const NUM_LEDS: usize = 16 * 16;
 
-    let pixels =
-        (0..NUM_LEDS).map(|i| RGBA::from(((i * std::u8::MAX as usize / NUM_LEDS) as u8, 0, 0)));
-    ws2812.write(pixels).unwrap();
-    loop {
-        sleep(Duration::from_millis(1000));
+    let ws2812 = LedPixelEsp32Rmt::<RGB8, LedPixelColorGrb24>::new(channel, led_pin).unwrap();
+    let mut display = interface::LedDisplay::new(ws2812);
 
-        for brightness_level in 0..NUM_BRIGHTNESS_LEVELS {
-            // let pixels = std::iter::repeat(RGBA::from((255, 0, 0, i as u8))).take(NUM_LEDS);
-            let pixels = (0..NUM_LEDS).map(|i| {
-                let level = (i * 255 / NUM_LEDS) as u8;
-                RGBA::from((level, level, level, brightness_level as u8))
-            });
-            ws2812.write(pixels).unwrap();
-            log::info!("BRIGHTNESS {}", brightness_level);
-            sleep(Duration::from_millis(1000));
+    let mut led_array = interface::LedRectangularArray::new(16, 16);
+
+    for y in 0..16 {
+        for x in 0..16 {
+            let r = (x * 255 / 16) as u8;
+            let g = (y * 255 / 16) as u8;
+            let b = 0;
+            led_array.set_pixel(x, y, Pixel::new(r, g, b));
         }
+    }
 
-        let pixels = std::iter::repeat(RGBA::from((6, 0, 0))).take(NUM_LEDS);
-        ws2812.write(pixels).unwrap();
-        log::info!("RED");
-        sleep(Duration::from_millis(1000));
+    display.output_to_display(&led_array).unwrap();
 
-        let pixels = std::iter::repeat(RGB8::from((0, 6, 0))).take(NUM_LEDS);
-        ws2812.write(pixels).unwrap();
-        log::info!("GREEN");
-        sleep(Duration::from_millis(1000));
-
-        let pixels = std::iter::repeat(RGB8::from((0, 0, 6))).take(NUM_LEDS);
-        ws2812.write(pixels).unwrap();
-        log::info!("BLUE");
-        sleep(Duration::from_millis(1000));
-
-        let pixels = std::iter::repeat(RGB8::from((200, 200, 200))).take(NUM_LEDS);
-        ws2812.write(pixels).unwrap();
-        log::info!("WHITE");
-        sleep(Duration::from_millis(1000));
-
-        let pixels = std::iter::repeat(RGB8::from((0, 0, 0))).take(NUM_LEDS);
-        ws2812.write(pixels).unwrap();
-        log::info!("OFF");
+    loop {
+        log::info!("Looping...");
         sleep(Duration::from_millis(1000));
     }
+
+    // let pixels = (0..NUM_LEDS)
+    //     .map(|i| RGBA8::from((255, 0, 0, (i * std::u8::MAX as usize / NUM_LEDS) as u8)));
+    // ws2812.write(pixels).unwrap();
+
+    // loop {
+    //     sleep(Duration::from_millis(1000));
+
+    //     // for brightness_level in 0..NUM_BRIGHTNESS_LEVELS {
+    //     //     // let pixels = std::iter::repeat(RGBA::from((255, 0, 0, i as u8))).take(NUM_LEDS);
+    //     //     let pixels = (0..NUM_LEDS).map(|i| {
+    //     //         let level = (i * 255 / NUM_LEDS) as u8;
+    //     //         RGBA8::from((level, level, level, brightness_level as u8))
+    //     //     });
+    //     //     ws2812.write(pixels).unwrap();
+    //     //     log::info!("BRIGHTNESS {}", brightness_level);
+    //     //     sleep(Duration::from_millis(1000));
+    //     // }
+
+    //     let pixels = std::iter::repeat(RGBA8::from((6, 0, 0, 255))).take(NUM_LEDS);
+    //     ws2812.write(pixels).unwrap();
+    //     log::info!("RED");
+    //     sleep(Duration::from_millis(1000));
+
+    //     let pixels = std::iter::repeat(RGBA8::from((0, 6, 0, 255))).take(NUM_LEDS);
+    //     ws2812.write(pixels).unwrap();
+    //     log::info!("GREEN");
+    //     sleep(Duration::from_millis(1000));
+
+    //     let pixels = std::iter::repeat(RGBA8::from((0, 0, 6, 255))).take(NUM_LEDS);
+    //     ws2812.write(pixels).unwrap();
+    //     log::info!("BLUE");
+    //     sleep(Duration::from_millis(1000));
+
+    //     let pixels = std::iter::repeat(RGBA8::from((200, 200, 200, 255))).take(NUM_LEDS);
+    //     ws2812.write(pixels).unwrap();
+    //     log::info!("WHITE");
+    //     sleep(Duration::from_millis(1000));
+
+    //     let pixels = std::iter::repeat(RGBA8::from((0, 0, 0, 255))).take(NUM_LEDS);
+    //     ws2812.write(pixels).unwrap();
+    //     log::info!("OFF");
+    //     sleep(Duration::from_millis(1000));
+    // }
 }

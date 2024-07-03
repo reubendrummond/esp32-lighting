@@ -1,4 +1,7 @@
-use super::{LedArray, Pixel};
+use crate::led::pixel::Pixel;
+
+use super::LedArray;
+
 
 pub struct LedRectangularArray {
     pub width: usize,

@@ -17,11 +17,11 @@ use esp_idf_svc::{
     timer::EspTaskTimerService,
 };
 
+use esp32_lighting::html::{index, IndexProps};
 use esp32_lighting::wifi::init_wifi;
-use esp32_lighting::{
-    html::{index, IndexProps},
-    led::interface::{self, LedDisplayWrite, Pixel},
-};
+
+use common::led::interface::{self, LedDisplayWrite};
+use common::led::pixel::Pixel;
 
 use http::Uri;
 use rgb::RGB8;

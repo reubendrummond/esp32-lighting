@@ -1,7 +1,9 @@
 use anyhow::Result;
 use smart_leds_trait::SmartLedsWrite;
 
-use super::{LedArray, LedDisplayWrite, Pixel};
+use crate::led::pixel::Pixel;
+
+use super::{LedArray, LedDisplayWrite};
 
 pub struct LedDisplay<TDriver: SmartLedsWrite> {
     driver: TDriver,

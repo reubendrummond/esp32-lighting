@@ -1,6 +1,6 @@
 use rgb::RGB8;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug, PartialEq)]
 pub struct Pixel {
     r: u8,
     g: u8,

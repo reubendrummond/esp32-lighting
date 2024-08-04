@@ -124,48 +124,4 @@ fn main() -> ! {
         log::info!("Looping...");
         sleep(Duration::from_millis(1000));
     }
-
-    // let pixels = (0..NUM_LEDS)
-    //     .map(|i| RGBA8::from((255, 0, 0, (i * std::u8::MAX as usize / NUM_LEDS) as u8)));
-    // ws2812.write(pixels).unwrap();
-
-    // loop {
-    //     sleep(Duration::from_millis(1000));
-
-    //     // for brightness_level in 0..NUM_BRIGHTNESS_LEVELS {
-    //     //     // let pixels = std::iter::repeat(RGBA::from((255, 0, 0, i as u8))).take(NUM_LEDS);
-    //     //     let pixels = (0..NUM_LEDS).map(|i| {
-    //     //         let level = (i * 255 / NUM_LEDS) as u8;
-    //     //         RGBA8::from((level, level, level, brightness_level as u8))
-    //     //     });
-    //     //     ws2812.write(pixels).unwrap();
-    //     //     log::info!("BRIGHTNESS {}", brightness_level);
-    //     //     sleep(Duration::from_millis(1000));
-    //     // }
-
-    //     let pixels = std::iter::repeat(RGBA8::from((6, 0, 0, 255))).take(NUM_LEDS);
-    //     ws2812.write(pixels).unwrap();
-    //     log::info!("RED");
-    //     sleep(Duration::from_millis(1000));
-
-    //     let pixels = std::iter::repeat(RGBA8::from((0, 6, 0, 255))).take(NUM_LEDS);
-    //     ws2812.write(pixels).unwrap();
-    //     log::info!("GREEN");
-    //     sleep(Duration::from_millis(1000));
-
-    //     let pixels = std::iter::repeat(RGBA8::from((0, 0, 6, 255))).take(NUM_LEDS);
-    //     ws2812.write(pixels).unwrap();
-    //     log::info!("BLUE");
-    //     sleep(Duration::from_millis(1000));
-
-    //     let pixels = std::iter::repeat(RGBA8::from((200, 200, 200, 255))).take(NUM_LEDS);
-    //     ws2812.write(pixels).unwrap();
-    //     log::info!("WHITE");
-    //     sleep(Duration::from_millis(1000));
-
-    //     let pixels = std::iter::repeat(RGBA8::from((0, 0, 0, 255))).take(NUM_LEDS);
-    //     ws2812.write(pixels).unwrap();
-    //     log::info!("OFF");
-    //     sleep(Duration::from_millis(1000));
-    // }
 }

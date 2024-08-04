@@ -24,7 +24,7 @@ jobs:
           - command: fmt
             args: --all -- --check --color always
           - command: clippy
-            args: --all-targets --all-features --workspace -- -D warnings
+            args: --target xtensa-esp32-espidf --all-features --workspace -- -D warnings
           - name: Test
             command: test
             # all tests that are independent of the esp32 target are in the common package

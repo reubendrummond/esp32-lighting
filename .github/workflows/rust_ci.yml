@@ -27,7 +27,8 @@ jobs:
             args: --all-targets --all-features --workspace -- -D warnings
           - name: Test
             command: test
-            args: --package common
+            # all tests that are independent of the esp32 target are in the common package
+            args: --target x86_64-unknown-linux-gnu --package common
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -5,9 +5,9 @@ fn main() {
 
     let is_ci = env::var("CI").is_ok();
     let env_file = if is_ci {
-        Path::new(".env.example")
+        Path::new("../.env.example")
     } else {
-        Path::new(".env")
+        Path::new("../.env")
     };
 
     let config = dotenv_build::Config {

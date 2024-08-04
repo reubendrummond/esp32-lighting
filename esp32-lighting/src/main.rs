@@ -1,3 +1,4 @@
+use core::panic;
 use std::{
     sync::{Arc, Mutex},
     thread::sleep,
@@ -15,14 +16,19 @@ use esp_idf_svc::{
     nvs::EspDefaultNvsPartition,
     timer::EspTaskTimerService,
 };
-mod html;
-mod wifi;
-use html::{index, IndexProps};
-use http::Uri;
-use url::form_urlencoded;
-use wifi::init_wifi;
 
-fn main() {
+use esp32_lighting::html::{index, IndexProps};
+use esp32_lighting::wifi::init_wifi;
+
+use common::led::interface::{self, LedDisplayWrite};
+use common::led::pixel::Pixel;
+
+use http::Uri;
+use rgb::RGB8;
+use url::form_urlencoded;
+use ws2812_esp32_rmt_driver::{driver::color::LedPixelColorGrb24, LedPixelEsp32Rmt};
+
+fn main() -> ! {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
     esp_idf_svc::sys::link_patches();
@@ -43,8 +49,7 @@ fn main() {
     ) {
         Ok(wifi) => wifi,
         Err(e) => {
-            log::error!("Failed to initialize wifi: {:?}", e);
-            return;
+            panic!("Failed to initialize wifi: {:?}", e)
         }
     };
 
@@ -94,8 +99,29 @@ fn main() {
         })
         .unwrap();
 
+    // led test tings
+
+    let led_pin = peripherals.pins.gpio26;
+    let channel = peripherals.rmt.channel0;
+
+    let ws2812 = LedPixelEsp32Rmt::<RGB8, LedPixelColorGrb24>::new(channel, led_pin).unwrap();
+    let mut display = interface::LedDisplay::new(ws2812);
+
+    let mut led_array = interface::LedRectangularArray::new(16, 16);
+
+    for y in 0..16 {
+        for x in 0..16 {
+            let r = (x * 255 / 16) as u8;
+            let g = (y * 255 / 16) as u8;
+            let b = 0;
+            led_array.set_pixel(x, y, Pixel::new(r, g, b));
+        }
+    }
+
+    display.output_to_display(&led_array).unwrap();
+
     loop {
-        log::info!("looping...");
-        sleep(Duration::from_secs(2));
+        log::info!("Looping...");
+        sleep(Duration::from_millis(1000));
     }
 }

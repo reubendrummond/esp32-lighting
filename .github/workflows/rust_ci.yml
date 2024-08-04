@@ -1,9 +1,6 @@
 name: Continuous Integration
 
 on:
-  push:
-    paths-ignore:
-      - "**/README.md"
   pull_request:
   workflow_dispatch:
 

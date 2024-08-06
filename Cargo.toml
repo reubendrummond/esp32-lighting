@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["common", "esp32-lighting"]
+members = ["common", "esp32-lighting", "web"]
 
 [profile.release]
 opt-level = "s"

@@ -1,0 +1,18 @@
+{
+  "rust-analyzer.cargo.buildScripts.overrideCommand": [
+    "cargo",
+    "+esp",
+    "check",
+    "--quiet",
+    "--workspace",
+    "--message-format=json"
+  ],
+  "rust-analyzer.check.overrideCommand": [
+    "cargo",
+    "+esp",
+    "clippy",
+    "--workspace",
+    "--message-format=json"
+  ],
+  "rust-analyzer.cargo.features": []
+}

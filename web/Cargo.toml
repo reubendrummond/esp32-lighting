@@ -1,0 +1,17 @@
+[package]
+name = "web"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.71"
+resolver = "2"
+
+[dependencies]
+maud = { version = "0.26.0" }
+
+[dev-dependencies]
+maud = { version = "*", features = ["rocket"] }
+rocket = { version = "*" }
+serde = { version = "1.0" }
+
+[[example]]
+name = "dev"

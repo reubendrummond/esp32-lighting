@@ -17,7 +17,7 @@ use esp_idf_svc::{
     timer::EspTaskTimerService,
 };
 
-use esp32_lighting::wifi::init_wifi;
+use esp32_lighting::{routes, wifi::init_wifi};
 use web::pages::{index, IndexProps};
 
 use common::led::interface::{self, LedDisplayWrite};
@@ -61,41 +61,7 @@ fn main() -> ! {
 
     server
         .fn_handler("/", Method::Get, move |request| {
-            log::info!("Request to {}", request.uri());
-
-            let uri = request.uri();
-            let uri = uri.parse::<Uri>()?;
-
-            let query = uri.query();
-
-            let light = match query {
-                Some(query) => form_urlencoded::parse(query.as_bytes())
-                    .find(|(key, _)| key == "light")
-                    .and_then(|(_, value)| {
-                        if value == "on" {
-                            Some(true)
-                        } else if value == "off" {
-                            Some(false)
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or(false),
-                None => false,
-            };
-
-            if light {
-                led.lock().unwrap().set_high()?;
-            } else {
-                led.lock().unwrap().set_low()?;
-            }
-
-            let html: String = index(IndexProps { light }).into();
-
-            let mut response = request.into_ok_response()?;
-            response.write_all(html.as_bytes())?;
-
-            Ok::<(), anyhow::Error>(())
+            routes::index::index_handler(request, Arc::clone(&led))
         })
         .unwrap();
 

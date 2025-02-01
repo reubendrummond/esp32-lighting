@@ -83,6 +83,15 @@ fn main() -> ! {
         .fn_handler("/spotify/login", Method::Get, |request| {
             spotify_login_handler(request, SPOTIFY_CLIENT_ID, redirect_uri)
         })
+        .unwrap()
+        .fn_handler("/spotify/callback", Method::Get, |request| {
+            routes::spotify_callback::spotify_callback_handler(
+                request,
+                redirect_uri,
+                SPOTIFY_CLIENT_ID,
+                SPOTIFY_CLIENT_SECRET,
+            )
+        })
         .unwrap();
 
     // led test tings

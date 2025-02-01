@@ -1,5 +1,6 @@
 use core::panic;
 use std::{
+    fmt::format,
     sync::{Arc, Mutex},
     thread::sleep,
     time::Duration,
@@ -15,9 +16,14 @@ use esp_idf_svc::{
     io::Write,
     nvs::EspDefaultNvsPartition,
     timer::EspTaskTimerService,
+    wifi::{AsyncWifi, EspWifi},
 };
 
-use esp32_lighting::{routes, wifi::init_wifi};
+use esp32_lighting::{
+    env::{SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET},
+    routes::{self, spotify_login::spotify_login_handler},
+    wifi::init_wifi,
+};
 use web::pages::{index, IndexProps};
 
 use common::led::interface::{self, LedDisplayWrite};
@@ -27,6 +33,13 @@ use http::Uri;
 use rgb::RGB8;
 use url::form_urlencoded;
 use ws2812_esp32_rmt_driver::{driver::color::LedPixelColorGrb24, LedPixelEsp32Rmt};
+
+fn get_redirect_uri(wifi: &AsyncWifi<EspWifi<'static>>) -> String {
+    format!(
+        "http://{}/spotify/callback",
+        wifi.wifi().sta_netif().get_ip_info().unwrap().ip
+    )
+}
 
 fn main() -> ! {
     // It is necessary to call this function once. Otherwise some patches to the runtime
@@ -41,7 +54,7 @@ fn main() -> ! {
     let peripherals = Peripherals::take().unwrap();
     let sysloop = EspSystemEventLoop::take().unwrap();
     let timer_service = EspTaskTimerService::new().unwrap();
-    let _wifi = match init_wifi(
+    let wifi = match init_wifi(
         peripherals.modem,
         sysloop,
         Some(EspDefaultNvsPartition::take().unwrap()),
@@ -53,6 +66,9 @@ fn main() -> ! {
         }
     };
 
+    let redirect_uri = &get_redirect_uri(&wifi);
+    log::info!("Redirect URI: {}", redirect_uri);
+
     let led = Arc::new(Mutex::new(
         PinDriver::output(peripherals.pins.gpio2.downgrade_output()).unwrap(),
     ));
@@ -60,8 +76,12 @@ fn main() -> ! {
     let mut server = EspHttpServer::new(&Default::default()).unwrap();
 
     server
-        .fn_handler("/", Method::Get, move |request| {
+        .fn_handler("/", Method::Get, |request| {
             routes::index::index_handler(request, Arc::clone(&led))
+        })
+        .unwrap()
+        .fn_handler("/spotify/login", Method::Get, |request| {
+            spotify_login_handler(request, SPOTIFY_CLIENT_ID, redirect_uri)
         })
         .unwrap();
 

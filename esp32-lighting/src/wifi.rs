@@ -10,8 +10,7 @@ use esp_idf_svc::{
 };
 use log::info;
 
-const WIFI_SSID: &str = env!("RUST_ESP32_WIFI_SSID");
-const WIFI_PASSWORD: &str = env!("RUST_ESP32_WIFI_PASSWORD");
+use crate::env::{WIFI_PASSWORD, WIFI_SSID};
 
 fn str_to_string32(s: &str) -> heapless::String<32> {
     let mut string = heapless::String::<32>::new();

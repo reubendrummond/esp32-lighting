@@ -9,7 +9,8 @@ use esp_idf_svc::{
 use web::pages::{index, IndexProps};
 
 use http::Uri;
-use url::form_urlencoded;
+
+use crate::utils::get_query_value;
 
 pub fn index_handler(
     request: Request<&mut EspHttpConnection>,
@@ -25,16 +26,11 @@ pub fn index_handler(
     let query = uri.query();
 
     let light = match query {
-        Some(query) => form_urlencoded::parse(query.as_bytes())
-            .find(|(key, _)| key == "light")
-            .and_then(|(_, value)| {
-                if value == "on" {
-                    Some(true)
-                } else if value == "off" {
-                    Some(false)
-                } else {
-                    None
-                }
+        Some(query) => get_query_value(query, "light")
+            .map(|value| match value.as_str() {
+                "on" => true,
+                "off" => false,
+                _ => false,
             })
             .unwrap_or(false),
         None => false,

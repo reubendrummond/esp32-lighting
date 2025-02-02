@@ -1,4 +1,4 @@
-use common::spotify::SpotifyKey;
+use common::spotify::{CurrentSong, SpotifyKey};
 use maud::{html, Markup};
 
 fn page_template(body: Markup) -> Markup {
@@ -74,6 +74,14 @@ pub fn index(props: IndexProps) -> Markup {
                     }
                 }
 
+                div class="mt-4" {
+                    @if let Some(current_song) = props.current_song {
+                        img src=(current_song.album_url) class="img-fluid" {}
+                    } @else {
+                        p { "No song playing" }
+                    }
+                }
+
             }
         }
     })
@@ -82,6 +90,7 @@ pub fn index(props: IndexProps) -> Markup {
 pub struct IndexProps<'a> {
     pub light: bool,
     pub spotify_key: Option<&'a SpotifyKey>,
+    pub current_song: Option<&'a CurrentSong>,
 }
 
 fn conditional_class(base_class: &str, optional_class: &str, condition: bool) -> String {

@@ -10,17 +10,22 @@ use web::pages::{index, IndexProps};
 
 use http::Uri;
 
-use crate::{dao::spotify_key::SpotifyKeyDao, utils::get_query_value};
+use crate::{
+    dao::{current_song::CurrentSongDao, spotify_key::SpotifyKeyDao},
+    utils::get_query_value,
+};
 
-pub fn index_handler<TSpotifyKeysDao>(
+pub fn index_handler<TSpotifyKeysDao, TCurrentSongDao>(
     request: Request<&mut EspHttpConnection>,
     led: Arc<
         Mutex<PinDriver<'_, esp_idf_svc::hal::gpio::AnyOutputPin, esp_idf_svc::hal::gpio::Output>>,
     >,
     spotify_keys_dao: Arc<Mutex<TSpotifyKeysDao>>,
+    current_song_dao: Arc<Mutex<TCurrentSongDao>>,
 ) -> Result<(), anyhow::Error>
 where
     TSpotifyKeysDao: SpotifyKeyDao,
+    TCurrentSongDao: CurrentSongDao,
 {
     log::info!("Request to {}", request.uri());
 
@@ -47,8 +52,15 @@ where
 
     let spotify_keys_dao = spotify_keys_dao.lock().unwrap();
     let spotify_key = spotify_keys_dao.get_spotify_key();
+    let current_song_dao = current_song_dao.lock().unwrap();
+    let current_song = current_song_dao.get_current_song();
 
-    let html: String = index(IndexProps { light, spotify_key }).into();
+    let html: String = index(IndexProps {
+        light,
+        spotify_key,
+        current_song,
+    })
+    .into();
 
     let mut response = request.into_ok_response()?;
     response.write_all(html.as_bytes())?;

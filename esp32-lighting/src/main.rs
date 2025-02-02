@@ -76,12 +76,20 @@ fn main() -> ! {
     let spotify_keys_dao = Arc::new(Mutex::new(
         esp32_lighting::dao::spotify_key::SpotifyKeyDaoImpl::new(),
     ));
+    let current_song_dao = Arc::new(Mutex::new(
+        esp32_lighting::dao::current_song::CurrentSongDaoImpl::new(),
+    ));
 
     let mut server = EspHttpServer::new(&Default::default()).unwrap();
 
     server
         .fn_handler("/", Method::Get, |request| {
-            routes::index::index_handler(request, led.clone(), spotify_keys_dao.clone())
+            routes::index::index_handler(
+                request,
+                led.clone(),
+                spotify_keys_dao.clone(),
+                current_song_dao.clone(),
+            )
         })
         .unwrap()
         .fn_handler("/spotify/login", Method::Get, |request| {
@@ -122,16 +130,16 @@ fn main() -> ! {
 
     let mut led_array = interface::LedRectangularArray::new(16, 16);
 
-    for y in 0..16 {
-        for x in 0..16 {
-            let r = (x * 255 / 16) as u8;
-            let g = (y * 255 / 16) as u8;
-            let b = 0;
-            led_array.set_pixel(x, y, Pixel::new(r, g, b));
-        }
-    }
+    // for y in 0..16 {
+    //     for x in 0..16 {
+    //         let r = (x * 255 / 16) as u8;
+    //         let g = (y * 255 / 16) as u8;
+    //         let b = 0;
+    //         led_array.set_pixel(x, y, Pixel::new(r, g, b));
+    //     }
+    // }
 
-    display.output_to_display(&led_array).unwrap();
+    // display.output_to_display(&led_array).unwrap();
 
     loop {
         sleep(Duration::from_millis(1000));

@@ -1,3 +1,4 @@
+use common::spotify::SpotifyKey;
 use maud::{html, Markup};
 
 fn page_template(body: Markup) -> Markup {
@@ -20,6 +21,18 @@ fn page_template(body: Markup) -> Markup {
                 }
             }
         }
+    }
+}
+
+fn login_with_spotify() -> Markup {
+    html! {
+        a class="btn btn-primary" href="/spotify/login" { "Login with Spotify" }
+    }
+}
+
+fn logged_in_with_spotify(spotify_key: &SpotifyKey) -> Markup {
+    html! {
+        a class="btn btn-danger" href="/spotify/logout" { "Logout" }
     }
 }
 
@@ -53,13 +66,22 @@ pub fn index(props: IndexProps) -> Markup {
                     }
                 }
 
+                div class="mt-4" {
+                    @if let Some(spotify_key) = props.spotify_key {
+                        (logged_in_with_spotify(spotify_key))
+                    } @else {
+                        (login_with_spotify())
+                    }
+                }
+
             }
         }
     })
 }
 
-pub struct IndexProps {
+pub struct IndexProps<'a> {
     pub light: bool,
+    pub spotify_key: Option<&'a SpotifyKey>,
 }
 
 fn conditional_class(base_class: &str, optional_class: &str, condition: bool) -> String {

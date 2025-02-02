@@ -10,14 +10,18 @@ use web::pages::{index, IndexProps};
 
 use http::Uri;
 
-use crate::utils::get_query_value;
+use crate::{dao::spotify_key::SpotifyKeyDao, utils::get_query_value};
 
-pub fn index_handler(
+pub fn index_handler<TSpotifyKeysDao>(
     request: Request<&mut EspHttpConnection>,
     led: Arc<
         Mutex<PinDriver<'_, esp_idf_svc::hal::gpio::AnyOutputPin, esp_idf_svc::hal::gpio::Output>>,
     >,
-) -> Result<(), anyhow::Error> {
+    spotify_keys_dao: Arc<Mutex<TSpotifyKeysDao>>,
+) -> Result<(), anyhow::Error>
+where
+    TSpotifyKeysDao: SpotifyKeyDao,
+{
     log::info!("Request to {}", request.uri());
 
     let uri = request.uri();
@@ -41,7 +45,10 @@ pub fn index_handler(
         false => led.lock().unwrap().set_low()?,
     }
 
-    let html: String = index(IndexProps { light }).into();
+    let spotify_keys_dao = spotify_keys_dao.lock().unwrap();
+    let spotify_key = spotify_keys_dao.get_spotify_key();
+
+    let html: String = index(IndexProps { light, spotify_key }).into();
 
     let mut response = request.into_ok_response()?;
     response.write_all(html.as_bytes())?;

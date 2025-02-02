@@ -1,6 +1,5 @@
 use core::panic;
 use std::{
-    fmt::format,
     sync::{Arc, Mutex},
     thread::sleep,
     time::Duration,
@@ -82,7 +81,7 @@ fn main() -> ! {
 
     server
         .fn_handler("/", Method::Get, |request| {
-            routes::index::index_handler(request, Arc::clone(&led))
+            routes::index::index_handler(request, led.clone(), spotify_keys_dao.clone())
         })
         .unwrap()
         .fn_handler("/spotify/login", Method::Get, |request| {
@@ -106,6 +105,10 @@ fn main() -> ! {
                 buffer.clone(),
                 spotify_keys_dao.clone(),
             )
+        })
+        .unwrap()
+        .fn_handler("/spotify/logout", Method::Get, |request| {
+            routes::spotify_logout::spotify_logout_handler(request, "/", spotify_keys_dao.clone())
         })
         .unwrap();
 

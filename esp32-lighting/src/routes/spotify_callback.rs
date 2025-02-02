@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use base64::Engine;
+use common::spotify::SpotifyKey;
 use esp_idf_svc::http::client;
 use esp_idf_svc::http::server;
 use esp_idf_svc::http::Method;
@@ -11,7 +12,6 @@ use http::Uri;
 use log::info;
 use serde::Deserialize;
 
-use crate::dao::spotify_key;
 use crate::dao::spotify_key::SpotifyKeyDao;
 use crate::utils::get_query_value;
 use crate::utils::url_encode_params;
@@ -99,6 +99,11 @@ where
     info!("Body size: {}", body_size);
     info!("Body: {:?}", &buffer[..body_size].utf8_chunks());
 
+    match status {
+        200 => (),
+        _ => return Err(anyhow::anyhow!("Failed to get Spotify auth response")),
+    };
+
     let spotify_response: SpotifyAuthResponse = match serde_json::from_slice(&buffer[..body_size]) {
         Ok(parsed) => parsed,
         Err(e) => {
@@ -112,7 +117,7 @@ where
     spotify_keys_dao
         .lock()
         .unwrap()
-        .save_spotify_key(spotify_key::SpotifyKey {
+        .save_spotify_key(SpotifyKey {
             access_token: spotify_response.access_token,
             refresh_token: spotify_response.refresh_token,
             expires_at: spotify_response.expires_in,

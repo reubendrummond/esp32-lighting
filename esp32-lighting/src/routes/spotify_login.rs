@@ -1,6 +1,4 @@
-use esp_idf_svc::http::server::Handler;
 use esp_idf_svc::http::server::{EspHttpConnection, Request, Response};
-use futures::ready;
 use log::info;
 // use rand::Rng;
 use std::collections::HashMap;

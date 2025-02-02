@@ -12,9 +12,10 @@ use esp_idf_svc::{
         gpio::{OutputPin, PinDriver},
         peripherals::Peripherals,
     },
-    http::{server::EspHttpServer, Method},
+    http::{client::Configuration, server::EspHttpServer, Method},
     io::Write,
     nvs::EspDefaultNvsPartition,
+    sys::esp_crt_bundle_attach,
     timer::EspTaskTimerService,
     wifi::{AsyncWifi, EspWifi},
 };
@@ -72,6 +73,10 @@ fn main() -> ! {
     let led = Arc::new(Mutex::new(
         PinDriver::output(peripherals.pins.gpio2.downgrade_output()).unwrap(),
     ));
+    let buffer = Arc::new(Mutex::new(vec![0; 1024]));
+    let spotify_keys_dao = Arc::new(Mutex::new(
+        esp32_lighting::dao::spotify_key::SpotifyKeyDaoImpl::new(),
+    ));
 
     let mut server = EspHttpServer::new(&Default::default()).unwrap();
 
@@ -85,11 +90,21 @@ fn main() -> ! {
         })
         .unwrap()
         .fn_handler("/spotify/callback", Method::Get, |request| {
+            let client_connection =
+                esp_idf_svc::http::client::EspHttpConnection::new(&Configuration {
+                    crt_bundle_attach: Some(esp_crt_bundle_attach),
+                    ..Default::default()
+                })
+                .unwrap();
+
             routes::spotify_callback::spotify_callback_handler(
                 request,
                 redirect_uri,
                 SPOTIFY_CLIENT_ID,
                 SPOTIFY_CLIENT_SECRET,
+                client_connection,
+                buffer.clone(),
+                spotify_keys_dao.clone(),
             )
         })
         .unwrap();
@@ -116,7 +131,6 @@ fn main() -> ! {
     display.output_to_display(&led_array).unwrap();
 
     loop {
-        log::info!("Looping...");
         sleep(Duration::from_millis(1000));
     }
 }

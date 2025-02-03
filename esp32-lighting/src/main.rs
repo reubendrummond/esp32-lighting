@@ -20,6 +20,7 @@ use esp_idf_svc::{
 };
 
 use esp32_lighting::{
+    currently_playing_song_poller::CurrentlyPlayingSongPoller,
     env::{SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET},
     routes::{self, spotify_login::spotify_login_handler},
     wifi::init_wifi,
@@ -141,7 +142,17 @@ fn main() -> ! {
 
     // display.output_to_display(&led_array).unwrap();
 
-    loop {
-        sleep(Duration::from_millis(1000));
-    }
+    let client_connection = esp_idf_svc::http::client::EspHttpConnection::new(&Configuration {
+        crt_bundle_attach: Some(esp_crt_bundle_attach),
+        ..Default::default()
+    })
+    .unwrap();
+
+    CurrentlyPlayingSongPoller::new(
+        current_song_dao.clone(),
+        spotify_keys_dao.clone(),
+        client_connection,
+        Duration::from_secs(2),
+    )
+    .blocking_poll();
 }
